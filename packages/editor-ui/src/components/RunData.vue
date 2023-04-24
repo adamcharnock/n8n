@@ -190,9 +190,8 @@
 
 			<div v-else-if="editMode.enabled" :class="$style.editMode">
 				<div :class="[$style.editModeBody, 'ignore-key-press']">
-					<code-node-editor
+					<json-editor
 						:value="editMode.value"
-						language="json"
 						@valueChanged="ndvStore.setOutputPanelEditModeValue($event)"
 					/>
 				</div>
@@ -495,12 +494,12 @@ import {
 import BinaryDataDisplay from '@/components/BinaryDataDisplay.vue';
 import WarningTooltip from '@/components/WarningTooltip.vue';
 import NodeErrorView from '@/components/Error/NodeErrorView.vue';
+import JsonEditor from '@/components/JsonEditor/JsonEditor.vue';
 
 import { externalHooks } from '@/mixins/externalHooks';
 import { genericHelpers } from '@/mixins/genericHelpers';
 import { nodeHelpers } from '@/mixins/nodeHelpers';
 import { pinData } from '@/mixins/pinData';
-import CodeNodeEditor from '@/components/CodeNodeEditor/CodeNodeEditor.vue';
 import { dataPinningEventBus } from '@/event-bus';
 import { clearJsonKey, executionDataToJson, stringSizeInBytes } from '@/utils';
 import { isEmpty } from '@/utils';
@@ -524,7 +523,7 @@ export default mixins(externalHooks, genericHelpers, nodeHelpers, pinData).exten
 		BinaryDataDisplay,
 		NodeErrorView,
 		WarningTooltip,
-		CodeNodeEditor,
+		JsonEditor,
 		RunDataTable,
 		RunDataJson,
 		RunDataSchema,

@@ -1,7 +1,6 @@
 import Vue from 'vue';
 import type { Diagnostic } from '@codemirror/lint';
 import { linter as createLinter } from '@codemirror/lint';
-import { jsonParseLinter } from '@codemirror/lang-json';
 import * as esprima from 'esprima-next';
 
 import {
@@ -13,18 +12,12 @@ import { walk } from './utils';
 
 import type { EditorView } from '@codemirror/view';
 import type { Node } from 'estree';
-import type { CodeLanguage, CodeNodeEditorMixin, RangeNode } from './types';
+import type { CodeNodeEditorMixin, RangeNode } from './types';
 
 export const linterExtension = (Vue as CodeNodeEditorMixin).extend({
 	methods: {
-		createLinter(language: CodeLanguage) {
-			switch (language) {
-				case 'javaScript':
-					return createLinter(this.lintSource, { delay: DEFAULT_LINTER_DELAY_IN_MS });
-				case 'json':
-					return createLinter(jsonParseLinter());
-			}
-			return undefined;
+		createLinter() {
+			return createLinter(this.lintSource, { delay: DEFAULT_LINTER_DELAY_IN_MS });
 		},
 
 		lintSource(editorView: EditorView): Diagnostic[] {

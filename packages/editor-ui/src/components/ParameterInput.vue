@@ -65,8 +65,6 @@
 					<div class="ignore-key-press">
 						<code-node-editor
 							:value="value"
-							:defaultValue="parameter.default"
-							:language="editorLanguage"
 							:isReadOnly="isReadOnly"
 							@valueChanged="expressionUpdated"
 						/>
@@ -84,11 +82,10 @@
 				></text-edit>
 
 				<code-node-editor
-					v-if="editorType === 'codeNodeEditor' && isCodeNode(node)"
+					v-if="editorType === 'codeNodeEditor'"
 					:mode="node.parameters.mode"
-					:value="node.parameters.jsCode"
+					:value="displayValue"
 					:defaultValue="parameter.default"
-					:language="editorLanguage"
 					:isReadOnly="isReadOnly"
 					@valueChanged="valueChangedDebounced"
 				/>
@@ -111,18 +108,7 @@
 					@valueChanged="valueChangedDebounced"
 				/>
 
-				<div
-					v-else-if="editorType"
-					class="readonly-code clickable ph-no-capture"
-					@click="displayEditDialog()"
-				>
-					<code-node-editor
-						v-if="!codeEditDialogVisible"
-						:value="value"
-						:language="editorLanguage"
-						:isReadOnly="true"
-					/>
-				</div>
+				<json-editor v-else-if="parameter.type === 'json'" :value="value" />
 
 				<n8n-input
 					v-else
@@ -359,7 +345,7 @@ import type {
 	INodePropertyCollection,
 	NodeParameterValueType,
 	EditorType,
-	CodeNodeEditorLanguage,
+	NodePropertyTypes,
 } from 'n8n-workflow';
 import { NodeHelpers } from 'n8n-workflow';
 
@@ -375,6 +361,7 @@ import ExpressionParameterInput from '@/components/ExpressionParameterInput.vue'
 import TextEdit from '@/components/TextEdit.vue';
 import CodeNodeEditor from '@/components/CodeNodeEditor/CodeNodeEditor.vue';
 import HtmlEditor from '@/components/HtmlEditor/HtmlEditor.vue';
+import JsonEditor from '@/components/JsonEditor/JsonEditor.vue';
 import SqlEditor from '@/components/SqlEditor/SqlEditor.vue';
 import { externalHooks } from '@/mixins/externalHooks';
 import { nodeHelpers } from '@/mixins/nodeHelpers';
@@ -406,6 +393,7 @@ export default mixins(
 	components: {
 		CodeNodeEditor,
 		HtmlEditor,
+		JsonEditor,
 		SqlEditor,
 		ExpressionEdit,
 		ExpressionParameterInput,
@@ -739,10 +727,6 @@ export default mixins(
 		},
 		editorType(): EditorType {
 			return this.getArgument('editor') as EditorType;
-		},
-		editorLanguage(): CodeNodeEditorLanguage {
-			if (this.editorType === 'json' || this.parameter.type === 'json') return 'json';
-			return 'javaScript';
 		},
 		parameterOptions():
 			| Array<INodePropertyOptions | INodeProperties | INodePropertyCollection>

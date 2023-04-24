@@ -37,22 +37,15 @@ import { codeNodeEditorTheme } from './theme';
 import { workflowHelpers } from '@/mixins/workflowHelpers'; // for json field completions
 import { ASK_AI_MODAL_KEY, CODE_NODE_TYPE } from '@/constants';
 import { codeNodeEditorEventBus } from '@/event-bus';
-import {
-	ALL_ITEMS_PLACEHOLDER,
-	CODE_LANGUAGES,
-	CODE_MODES,
-	EACH_ITEM_PLACEHOLDER,
-} from './constants';
+import { ALL_ITEMS_PLACEHOLDER, CODE_MODES, EACH_ITEM_PLACEHOLDER } from './constants';
 import { useRootStore } from '@/stores/n8nRootStore';
 import Modal from '../Modal.vue';
 import { useSettingsStore } from '@/stores/settings';
-import type { CodeLanguage, CodeMode } from './types';
+import type { CodeMode } from './types';
 
-const placeholders: Partial<Record<CodeLanguage, Record<CodeMode, string>>> = {
-	javaScript: {
-		runOnceForAllItems: ALL_ITEMS_PLACEHOLDER,
-		runOnceForEachItem: EACH_ITEM_PLACEHOLDER,
-	},
+const placeholders: Partial<Record<CodeMode, string>> = {
+	runOnceForAllItems: ALL_ITEMS_PLACEHOLDER,
+	runOnceForEachItem: EACH_ITEM_PLACEHOLDER,
 };
 
 export default mixins(linterExtension, completerExtension, workflowHelpers).extend({
@@ -62,11 +55,6 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 		mode: {
 			type: String as PropType<CodeMode>,
 			validator: (value: CodeMode): boolean => CODE_MODES.includes(value),
-		},
-		language: {
-			type: String as PropType<CodeLanguage>,
-			default: 'javaScript' as CodeLanguage,
-			validator: (value: CodeLanguage): boolean => CODE_LANGUAGES.includes(value),
 		},
 		isReadOnly: {
 			type: Boolean,
@@ -88,7 +76,7 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 		mode(newMode, previousMode: CodeMode) {
 			this.reloadLinter();
 
-			if (this.content.trim() === placeholders[this.language]?.[previousMode]) {
+			if (this.content.trim() === placeholders[previousMode]) {
 				this.refreshPlaceholder();
 			}
 		},
@@ -104,7 +92,7 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 			return this.editor.state.doc.toString();
 		},
 		placeholder(): string {
-			return placeholders[this.language]?.[this.mode] ?? '';
+			return placeholders[this.mode] ?? '';
 		},
 	},
 	methods: {
@@ -128,12 +116,9 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 		reloadLinter() {
 			if (!this.editor) return;
 
-			const linter = this.createLinter(this.language);
-			if (linter) {
-				this.editor.dispatch({
-					effects: this.linterCompartment.reconfigure(linter),
-				});
-			}
+			this.editor.dispatch({
+				effects: this.linterCompartment.reconfigure(this.createLinter()),
+			});
 		},
 		refreshPlaceholder() {
 			if (!this.editor) return;
@@ -200,22 +185,20 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 			this.$emit('valueChanged', this.placeholder);
 		}
 
-		const { isReadOnly, language } = this;
+		const { isReadOnly } = this;
 		const extensions: Extension[] = [
 			...readOnlyEditorExtensions,
+			javascript(),
 			EditorState.readOnly.of(isReadOnly),
 			EditorView.editable.of(!isReadOnly),
 			codeNodeEditorTheme({ isReadOnly }),
 		];
 
 		if (!isReadOnly) {
-			const linter = this.createLinter(language);
-			if (linter) {
-				extensions.push(this.linterCompartment.of(linter));
-			}
-
 			extensions.push(
 				...writableEditorExtensions,
+				this.autocompletionExtension(),
+				this.linterCompartment.of(this.createLinter()),
 				EditorView.domEventHandlers({
 					focus: () => {
 						this.isEditorFocused = true;
@@ -232,15 +215,6 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 					this.$emit('valueChanged', this.editor?.state.doc.toString());
 				}),
 			);
-		}
-
-		switch (language) {
-			case 'json':
-				extensions.push(json());
-				break;
-			case 'javaScript':
-				extensions.push(javascript(), this.autocompletionExtension());
-				break;
 		}
 
 		const state = EditorState.create({
