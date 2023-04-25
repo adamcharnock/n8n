@@ -494,7 +494,7 @@ import {
 import BinaryDataDisplay from '@/components/BinaryDataDisplay.vue';
 import WarningTooltip from '@/components/WarningTooltip.vue';
 import NodeErrorView from '@/components/Error/NodeErrorView.vue';
-import JsonEditor from '@/components/JsonEditor/JsonEditor.vue';
+import JsonEditor from '@/components/CodeEditor/JsonEditor.vue';
 
 import { externalHooks } from '@/mixins/externalHooks';
 import { genericHelpers } from '@/mixins/genericHelpers';
@@ -1620,7 +1620,7 @@ export default mixins(externalHooks, genericHelpers, nodeHelpers, pinData).exten
 
 <style lang="scss" scoped>
 .run-data {
-	.code-node-editor {
+	.js-editor {
 		height: 100%;
 	}
 }

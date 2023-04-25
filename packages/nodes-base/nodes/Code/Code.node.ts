@@ -47,7 +47,7 @@ export class Code implements INodeType {
 				displayName: 'JavaScript',
 				name: 'jsCode',
 				typeOptions: {
-					editor: 'codeNodeEditor',
+					editor: 'jsEditor',
 				},
 				type: 'string',
 				default: '', // set by component

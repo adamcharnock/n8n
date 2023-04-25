@@ -39,7 +39,7 @@ export class FunctionItem implements INodeType {
 				typeOptions: {
 					alwaysOpenEditWindow: true,
 					codeAutocomplete: 'functionItem',
-					editor: 'codeNodeEditor',
+					editor: 'jsEditor',
 					rows: 10,
 				},
 				type: 'string',

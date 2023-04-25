@@ -35,9 +35,9 @@ import { expressionInputHandler } from '@/plugins/codemirror/inputHandlers/expre
 import { highlighter } from '@/plugins/codemirror/resolvableHighlighter';
 import { htmlEditorEventBus } from '@/event-bus';
 import { expressionManager } from '@/mixins/expressionManager';
-import { theme } from './theme';
-import { nonTakenRanges } from './utils';
-import type { Range, Section } from './types';
+import { theme } from './html/theme';
+import { nonTakenRanges } from './html/utils';
+import type { Range, Section } from './html/types';
 
 export default mixins(expressionManager).extend({
 	name: 'HtmlEditor',

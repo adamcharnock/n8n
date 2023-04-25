@@ -1,11 +1,11 @@
 <template>
 	<div
-		:class="['code-node-editor', $style['code-node-editor-container']]"
+		:class="['js-editor', $style['js-editor-container']]"
 		@mouseover="onMouseOver"
 		@mouseout="onMouseOut"
-		ref="codeNodeEditorContainer"
+		ref="jsEditorContainer"
 	>
-		<div ref="codeNodeEditor" class="code-node-editor-input ph-no-capture"></div>
+		<div ref="jsEditor" class="js-editor-input ph-no-capture"></div>
 		<n8n-button
 			v-if="isCloud && (isEditorHovered || isEditorFocused)"
 			size="small"
@@ -28,20 +28,20 @@ import { Compartment, EditorState } from '@codemirror/state';
 import type { ViewUpdate } from '@codemirror/view';
 import { EditorView } from '@codemirror/view';
 import { javascript } from '@codemirror/lang-javascript';
-import { json } from '@codemirror/lang-json';
 
-import { readOnlyEditorExtensions, writableEditorExtensions } from './baseExtensions';
-import { linterExtension } from './linter';
-import { completerExtension } from './completer';
-import { codeNodeEditorTheme } from './theme';
 import { workflowHelpers } from '@/mixins/workflowHelpers'; // for json field completions
 import { ASK_AI_MODAL_KEY, CODE_NODE_TYPE } from '@/constants';
-import { codeNodeEditorEventBus } from '@/event-bus';
-import { ALL_ITEMS_PLACEHOLDER, CODE_MODES, EACH_ITEM_PLACEHOLDER } from './constants';
+import { jsEditorEventBus } from '@/event-bus';
 import { useRootStore } from '@/stores/n8nRootStore';
-import Modal from '../Modal.vue';
+import Modal from '@/components/Modal.vue';
 import { useSettingsStore } from '@/stores/settings';
-import type { CodeMode } from './types';
+
+import { ALL_ITEMS_PLACEHOLDER, CODE_MODES, EACH_ITEM_PLACEHOLDER } from './js/constants';
+import type { CodeMode } from './js/types';
+import { readOnlyEditorExtensions, writableEditorExtensions } from './js/baseExtensions';
+import { linterExtension } from './js/linter';
+import { completerExtension } from './js/completer';
+import { codeNodeEditorTheme } from './js/theme';
 
 const placeholders: Partial<Record<CodeMode, string>> = {
 	runOnceForAllItems: ALL_ITEMS_PLACEHOLDER,
@@ -49,7 +49,7 @@ const placeholders: Partial<Record<CodeMode, string>> = {
 };
 
 export default mixins(linterExtension, completerExtension, workflowHelpers).extend({
-	name: 'code-node-editor',
+	name: 'js-editor',
 	components: { Modal },
 	props: {
 		mode: {
@@ -98,13 +98,13 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 	methods: {
 		onMouseOver(event: MouseEvent) {
 			const fromElement = event.relatedTarget as HTMLElement;
-			const ref = this.$refs.codeNodeEditorContainer as HTMLDivElement | undefined;
+			const ref = this.$refs.jsEditorContainer as HTMLDivElement | undefined;
 
 			if (!ref?.contains(fromElement)) this.isEditorHovered = true;
 		},
 		onMouseOut(event: MouseEvent) {
 			const fromElement = event.relatedTarget as HTMLElement;
-			const ref = this.$refs.codeNodeEditorContainer as HTMLDivElement | undefined;
+			const ref = this.$refs.jsEditorContainer as HTMLDivElement | undefined;
 
 			if (!ref?.contains(fromElement)) this.isEditorHovered = false;
 		},
@@ -175,10 +175,10 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 		},
 	},
 	destroyed() {
-		if (!this.isReadOnly) codeNodeEditorEventBus.off('error-line-number', this.highlightLine);
+		if (!this.isReadOnly) jsEditorEventBus.off('error-line-number', this.highlightLine);
 	},
 	mounted() {
-		if (!this.isReadOnly) codeNodeEditorEventBus.on('error-line-number', this.highlightLine);
+		if (!this.isReadOnly) jsEditorEventBus.on('error-line-number', this.highlightLine);
 
 		// empty on first load, default param value
 		if (!this.value) {
@@ -223,7 +223,7 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 		});
 
 		this.editor = new EditorView({
-			parent: this.$refs.codeNodeEditor as HTMLDivElement,
+			parent: this.$refs.jsEditor as HTMLDivElement,
 			state,
 		});
 	},
@@ -231,7 +231,7 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 </script>
 
 <style lang="scss" module>
-.code-node-editor-container {
+.js-editor-container {
 	position: relative;
 
 	& > div {

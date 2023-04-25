@@ -1019,7 +1019,7 @@ export type NodePropertyTypes =
 
 export type CodeAutocompleteTypes = 'function' | 'functionItem';
 
-export type EditorType = 'codeNodeEditor' | 'htmlEditor' | 'sqlEditor';
+export type EditorType = 'jsEditor' | 'htmlEditor' | 'sqlEditor';
 export type SQLDialect = 'mssql' | 'mysql' | 'postgres';
 
 export interface ILoadOptions {

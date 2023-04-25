@@ -63,11 +63,7 @@
 					:before-close="closeCodeEditDialog"
 				>
 					<div class="ignore-key-press">
-						<code-node-editor
-							:value="value"
-							:isReadOnly="isReadOnly"
-							@valueChanged="expressionUpdated"
-						/>
+						<js-editor :value="value" :isReadOnly="isReadOnly" @valueChanged="expressionUpdated" />
 					</div>
 				</el-dialog>
 
@@ -81,8 +77,8 @@
 					@valueChanged="expressionUpdated"
 				></text-edit>
 
-				<code-node-editor
-					v-if="editorType === 'codeNodeEditor'"
+				<js-editor
+					v-if="editorType === 'jsEditor'"
 					:mode="node.parameters.mode"
 					:value="displayValue"
 					:defaultValue="parameter.default"
@@ -345,7 +341,6 @@ import type {
 	INodePropertyCollection,
 	NodeParameterValueType,
 	EditorType,
-	NodePropertyTypes,
 } from 'n8n-workflow';
 import { NodeHelpers } from 'n8n-workflow';
 
@@ -359,10 +354,10 @@ import ParameterIssues from '@/components/ParameterIssues.vue';
 import ResourceLocator from '@/components/ResourceLocator/ResourceLocator.vue';
 import ExpressionParameterInput from '@/components/ExpressionParameterInput.vue';
 import TextEdit from '@/components/TextEdit.vue';
-import CodeNodeEditor from '@/components/CodeNodeEditor/CodeNodeEditor.vue';
-import HtmlEditor from '@/components/HtmlEditor/HtmlEditor.vue';
-import JsonEditor from '@/components/JsonEditor/JsonEditor.vue';
-import SqlEditor from '@/components/SqlEditor/SqlEditor.vue';
+import HtmlEditor from '@/components/CodeEditor/HtmlEditor.vue';
+import JsEditor from '@/components/CodeEditor/JsEditor.vue';
+import JsonEditor from '@/components/CodeEditor/JsonEditor.vue';
+import SqlEditor from '@/components/CodeEditor/SqlEditor.vue';
 import { externalHooks } from '@/mixins/externalHooks';
 import { nodeHelpers } from '@/mixins/nodeHelpers';
 import { showMessage } from '@/mixins/showMessage';
@@ -391,8 +386,8 @@ export default mixins(
 ).extend({
 	name: 'parameter-input',
 	components: {
-		CodeNodeEditor,
 		HtmlEditor,
+		JsEditor,
 		JsonEditor,
 		SqlEditor,
 		ExpressionEdit,
