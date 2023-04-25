@@ -88,7 +88,7 @@
 
 				<html-editor
 					v-else-if="editorType === 'htmlEditor'"
-					:html="node.parameters.html"
+					:value="node.parameters.html"
 					:isReadOnly="isReadOnly"
 					:rows="getArgument('rows')"
 					:disableExpressionColoring="!isHtmlNode(node)"
@@ -98,13 +98,17 @@
 
 				<sql-editor
 					v-else-if="editorType === 'sqlEditor'"
-					:query="node.parameters.query"
+					:value="node.parameters.query"
 					:dialect="getArgument('sqlDialect')"
 					:isReadOnly="isReadOnly"
 					@valueChanged="valueChangedDebounced"
 				/>
 
-				<json-editor v-else-if="parameter.type === 'json'" :value="value" />
+				<json-editor
+					v-else-if="parameter.type === 'json'"
+					:value="value"
+					@valueChanged="valueChangedDebounced"
+				/>
 
 				<n8n-input
 					v-else

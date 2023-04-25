@@ -41,7 +41,7 @@ import type { CodeMode } from './js/types';
 import { readOnlyEditorExtensions, writableEditorExtensions } from './js/baseExtensions';
 import { linterExtension } from './js/linter';
 import { completerExtension } from './js/completer';
-import { codeNodeEditorTheme } from './js/theme';
+import { codeEditorTheme } from './theme';
 
 const placeholders: Partial<Record<CodeMode, string>> = {
 	runOnceForAllItems: ALL_ITEMS_PLACEHOLDER,
@@ -191,7 +191,7 @@ export default mixins(linterExtension, completerExtension, workflowHelpers).exte
 			javascript(),
 			EditorState.readOnly.of(isReadOnly),
 			EditorView.editable.of(!isReadOnly),
-			codeNodeEditorTheme({ isReadOnly }),
+			codeEditorTheme({ isReadOnly }),
 		];
 
 		if (!isReadOnly) {
