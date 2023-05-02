@@ -1,42 +1,45 @@
 import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
-import type { CodeNodeMode } from './utils';
 import { LoadPyodide } from './Pyodide';
+import type { SandboxContext } from './Sandbox';
 import { Sandbox } from './Sandbox';
+
+type PythonSandboxContext = {
+	[K in keyof SandboxContext as K extends `$${infer I}` ? `_${I}` : K]: SandboxContext[K];
+};
 
 type PyodideError = Error & { type: string };
 
-export class SandboxPython extends Sandbox {
-	private code = '';
-
-	private itemIndex: number | undefined = undefined;
-
-	constructor(private nodeMode: CodeNodeMode, private helpers: IExecuteFunctions['helpers']) {
-		super({
-			object: {
-				singular: 'dictionary',
-				plural: 'dictionaries',
+export class PythonSandbox extends Sandbox {
+	constructor(
+		private context: PythonSandboxContext,
+		private pythonCode: string,
+		private moduleImports: string[],
+		itemIndex: number | undefined,
+		helpers: IExecuteFunctions['helpers'],
+	) {
+		super(
+			{
+				object: {
+					singular: 'dictionary',
+					plural: 'dictionaries',
+				},
 			},
-		});
+			itemIndex,
+			helpers,
+		);
 	}
 
-	async runCode(
-		context: ReturnType<typeof getSandboxContextPython>,
-		code: string,
-		moduleImports: string[],
-		itemIndex?: number,
-	) {
-		this.code = code;
-		this.itemIndex = itemIndex;
-
-		return this.nodeMode === 'runOnceForAllItems'
-			? this.runCodeAllItems(context, moduleImports)
-			: this.runCodeEachItem(context, moduleImports);
+	async runCodeAllItems() {
+		const executionResult = await this.runCodeInPython<INodeExecutionData[]>();
+		return this.validateRunCodeAllItems(executionResult);
 	}
 
-	private async runCodeInPython(
-		context: ReturnType<typeof getSandboxContextPython>,
-		moduleImports: string[],
-	) {
+	async runCodeEachItem() {
+		const executionResult = await this.runCodeInPython<INodeExecutionData>();
+		return this.validateRunCodeEachItem(executionResult);
+	}
+
+	private async runCodeInPython<T>() {
 		// Below workaround from here:
 		// https://github.com/pyodide/pyodide/discussions/3537#discussioncomment-4864345
 		const runCode = `
@@ -48,7 +51,7 @@ if printOverwrite:
   print = printOverwrite
 
 async def __main():
-${this.code
+${this.pythonCode
 	.split('\n')
 	.map((line) => '  ' + line)
 	.join('\n')}
@@ -56,7 +59,7 @@ await __main()
 `;
 		const pyodide = await LoadPyodide();
 
-		const moduleImportsFiltered = moduleImports.filter(
+		const moduleImportsFiltered = this.moduleImports.filter(
 			(importModule) => !['asyncio', 'pyodide', 'math'].includes(importModule),
 		);
 
@@ -72,8 +75,10 @@ await __main()
 		try {
 			const dict = pyodide.globals.get('dict');
 			const globalsDict = dict();
-			for (const key of Object.keys(context)) {
-				globalsDict.set(key, context[key]);
+			for (const key in this.context) {
+				if (key === '_env') continue; // Pyodide throws an error when setting this key
+				const value = this.context[key];
+				globalsDict.set(key, value);
 			}
 
 			executionResult = await pyodide.runPythonAsync(runCode, { globals: globalsDict });
@@ -83,10 +88,13 @@ await __main()
 		}
 
 		if (executionResult?.toJs) {
-			return executionResult.toJs({ dict_converter: Object.fromEntries, create_proxies: false });
+			return executionResult.toJs({
+				dict_converter: Object.fromEntries,
+				create_proxies: false,
+			}) as T;
 		}
 
-		return executionResult;
+		return executionResult as T;
 	}
 
 	private getPrettyError(error: PyodideError): Error {
@@ -97,34 +105,12 @@ await __main()
 
 		return error;
 	}
-
-	private async runCodeAllItems(
-		context: ReturnType<typeof getSandboxContextPython>,
-		moduleImports: string[],
-	) {
-		const executionResult = await this.runCodeInPython(context, moduleImports);
-
-		this.validateRunCodeAllItems(executionResult as INodeExecutionData[], this.itemIndex);
-
-		return this.helpers.normalizeItems(executionResult as INodeExecutionData[]);
-	}
-
-	private async runCodeEachItem(
-		context: ReturnType<typeof getSandboxContextPython>,
-		moduleImports: string[],
-	) {
-		const executionResult = await this.runCodeInPython(context, moduleImports);
-
-		this.validateRunCodeEachItem(executionResult as INodeExecutionData, false, this.itemIndex);
-
-		return executionResult.json ? executionResult : { json: executionResult };
-	}
 }
 
-export function getSandboxContextPython(
+export function getPythonSandboxContext(
 	this: IExecuteFunctions,
 	index: number,
-): Record<string, unknown> {
+): PythonSandboxContext {
 	const item = this.getWorkflowDataProxy(index);
 
 	return {
@@ -132,17 +118,29 @@ export function getSandboxContextPython(
 		_getNodeParameter: this.getNodeParameter,
 		_getWorkflowStaticData: this.getWorkflowStaticData,
 		helpers: this.helpers,
+		// TODO: automatically swap `$` with `_`
 		_: item.$,
 		_execution: item.$execution,
 		_input: item.$input,
 		_item: this.getWorkflowDataProxy,
+		_items: item.$_items,
 		_itemIndex: item.$itemIndex,
 		_jmesPath: item.$jmesPath,
 		_mode: item.$mode,
 		_now: item.$now,
+		_binary: item.$binary,
+		_json: item.$json,
+		_data: item.$data,
+		_env: item.$env,
+		_evaluateExpression: item.$evaluateExpression,
+		_node: item.$node,
+		_position: item.$position,
 		_parameter: item.$parameter,
 		_prevNode: item.$prevNode,
 		_runIndex: item.$runIndex,
+		_thisItem: item.$thisItem,
+		_thisItemIndex: item.$thisItemIndex,
+		_thisRunIndex: item.$thisRunIndex,
 		_self: item.$self,
 		_today: item.$today,
 		_workflow: item.$workflow,
